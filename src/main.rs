@@ -21,8 +21,6 @@ use std::{error::Error, env, process};
 use csv::{ReaderBuilder};
 use csv_partitioner::{row_to_groups, CsvPartitioner};
 
-mod anki_api;
-
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Hello, world!");
 
