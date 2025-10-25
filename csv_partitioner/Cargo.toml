@@ -3,6 +3,10 @@ name = "csv-partitioner"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "csv_partitioner"
+path = "src/lib.rs"
+
 [dependencies]
 csv = "1.4.0"
-serde = "1.0.228"
+

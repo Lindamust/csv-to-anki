@@ -65,7 +65,6 @@
 
 use csv::{ReaderBuilder, StringRecord};
 use std::error::Error;
-use std::fmt::format;
 use std::fs::{read, File};
 use std::path::Path;
 
@@ -287,7 +286,7 @@ impl CsvSliceParser {
     pub fn parse_slice_iter<'a, T: FromColumnSlice + 'a>(
         &'a self,
         slice_index: usize
-    ) -> impl Iterator<Item = Result<T, Box<dyn Error>>> {
+    ) -> Result<impl Iterator<Item = Result<T, Box<dyn Error>>> + 'a, Box<dyn Error>> {
         let (start_col, end_col) = self.validate_slice_index::<T>(slice_index)?;
 
         Ok(self.records.iter().filter_map(move |record| {
