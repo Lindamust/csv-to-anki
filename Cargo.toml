@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 csv = "1.4.0"
-csv-partitioner = { path = "csv-partitioner" }
+csv-partitioner = { path = "csv_partitioner" }

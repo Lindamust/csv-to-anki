@@ -65,7 +65,7 @@
 
 use csv::{ReaderBuilder, StringRecord};
 use std::error::Error;
-use std::fs::{read, File};
+use std::fs::{File};
 use std::path::Path;
 
 pub trait FromColumnSlice: Sized {
