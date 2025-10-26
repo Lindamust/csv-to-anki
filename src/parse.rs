@@ -1,6 +1,9 @@
 use csv_partitioner::{CsvSliceParser, FromColumnSlice};
 use std::{error::Error, sync::Arc};
 
+// ============================================================================================
+//                                      Input Parsing
+// ============================================================================================
 
 #[derive(Debug, Clone)]
 pub struct Word {
