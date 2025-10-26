@@ -1,7 +1,8 @@
 use csv_partitioner::{CsvSliceParser, FromColumnSlice};
-use std::{error::Error};
-use std::sync::Arc;
-use std::env;
+use std::{error::Error, sync::Arc, env};
+
+mod anki;
+
 
 fn main() {
     println!("Hello, world!");
@@ -11,10 +12,15 @@ fn main() {
     }
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
+#[inline]
+fn get_file_path(args: env::Args) -> Option<String> {
+    args.into_iter().nth(1)
+}
 
-    if let Some(path) = args.get(1) {
+
+
+fn run() -> Result<(), Box<dyn Error>> {
+    if let Some(path) = get_file_path(env::args()) {
         for topic in parse_topics_nested_iter(&path)? {
             let topic = topic?;
             println!("Topic: {}", topic.name);
@@ -38,11 +44,6 @@ struct Word {
     kanji: String,
 }
 
-#[derive(Debug, Clone)]
-struct Topic {
-    name: String,
-    words: Vec<Word>,
-}
 
 impl FromColumnSlice for Word {
     const COLUMN_COUNT: usize = 3;
@@ -64,46 +65,11 @@ impl FromColumnSlice for Word {
     }
 }
 
-
-fn parse_topics_from_csv(file_path: &str) -> Result<Vec<Topic>, Box<dyn Error>> {
-    let parser: CsvSliceParser = CsvSliceParser::from_file(file_path)
-        .map_err(|e: Box<dyn Error>| format!("Failed to load CSV: {}", e))?;
-
-    let slice_count: usize = parser.slice_count::<Word>();
-
-    if slice_count == 0 {
-        return Err("No valid slices found".into());
-    }
-
-    let mut topic_vec: Vec<Topic> = Vec::with_capacity(slice_count);  // low-hanging fruit optimisation
-
-    for slice_idx in 0..slice_count {
-        // get name
-        let name = parser.headers()
-            .get(slice_idx * Word::COLUMN_COUNT)
-            .unwrap_or("")
-            .to_string();
-
-        // get words
-        let words = parser.parse_slice::<Word>(slice_idx)?;
-
-        topic_vec.push(Topic { name, words });
-    }
-
-    Ok(topic_vec)
+#[derive(Debug, Clone)]
+struct Topic {
+    name: String,
+    words: Vec<Word>,
 }
-
-fn parse_topics_from_csv_lazy(file_path: &str) -> Result<Vec<Topic>, Box<dyn Error>> {
-    let parser = CsvSliceParser::from_file(file_path)?;
-
-    (0..parser.slice_count::<Word>())
-        .map(|i| Ok(Topic {
-            name: parser.headers().get(i * Word::COLUMN_COUNT).unwrap_or("").to_string(),
-            words: parser.parse_slice::<Word>(i)?,
-        }))
-        .collect()
-}
-
 
 struct TopicWithWordIter {
     name: String,
