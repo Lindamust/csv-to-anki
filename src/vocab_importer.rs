@@ -1,9 +1,9 @@
+use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::Word};
+use std::error::Error;
+
 // ============================================================================================
 //                          High-Level API for Japanese Vocabularly
 // ============================================================================================
-
-use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::Word};
-use std::error::Error;
 
 pub struct JapaneseVocabImporter {
     client: AnkiConnectClient,
@@ -67,5 +67,7 @@ impl JapaneseVocabImporter {
             picture: None,
         }
     }
+
+
 
 }
