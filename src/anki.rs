@@ -44,7 +44,7 @@ struct AddNoteParams {
 
 /// Anki note structure
 #[derive(Debug, Serialize, Clone)]
-struct Note {
+pub struct Note {
     #[serde(rename = "deckName")]
     deck_name: String,
 
@@ -198,6 +198,19 @@ impl AnkiConnectClient {
     }
 
 
+    /// Add multiple notes in batch 
+    pub fn add_notes(&self, notes: Vec<Note>) -> Result<Vec<Result<i64, String>>, Box<dyn Error>> {
+        let mut results = Vec::new();
+
+        for note in notes {
+            match self.add_note(note) {
+                Ok(id) => results.push(Ok(id)),
+                Err(e) => results.push(Err(e.to_string())),
+            }
+        }
+
+        Ok(results)
+    }
 
     /// send a request to ankiconnect
     fn send_request<T: Serialize, R: for<'de> Deserialize<'de>>(
