@@ -1,5 +1,5 @@
-use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::Word};
-use std::error::Error;
+use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::{Word, Topic}};
+use std::{error::Error, result};
 
 // ============================================================================================
 //                          High-Level API for Japanese Vocabularly
@@ -74,5 +74,73 @@ impl JapaneseVocabImporter {
         self.client.add_note(note)
     }
 
+    /// import all words for a topic
+    pub fn import_topic(&self, topic: &Topic) -> Result<ImportResult, Box<dyn Error>> {
+        let mut result = ImportResult::new(&topic.name());
+        
+        for word in topic.words() {
+            match self.import_word(word, topic.name()) {
+                Ok(note_id) => {
+                    result.added += 1;
+                    println!("  Success: Added - {} -> {}", word.japanese(), word.english());
+                },
 
+                Err(e) if e.to_string().contains("duplicate") => {
+                    result.duplicates += 1;
+                    println!("  Error: Duplicate - {}", word.japanese());
+                },
+
+                Err(e) => {
+                    result.errors += 1;
+                    eprintln!(" Error: adding {}: {}", word.japanese(), e);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+
+
+    /// import all topics
+    pub fn import_all_topics(&self, topics: &[Topic]) -> Result<Vec<ImportResult>, Box<dyn Error>> {
+        let mut results = Vec::new();
+
+        for topic in topics {
+            println!("\nImporting topic: {}", topic.name());
+            let result = self.import_topic(topic)?;
+            results.push(result);
+        }
+
+        Ok(results)
+    }
+}
+
+pub struct ImportResult {
+    pub topic_name: String,
+    pub added: usize,
+    pub duplicates: usize,
+    pub errors: usize,
+}
+
+impl ImportResult {
+    fn new(topic_name: &str) -> Self {
+        ImportResult { 
+            topic_name: topic_name.to_string(), 
+            added: 0, 
+            duplicates: 0, 
+            errors: 0 
+        }
+    }
+
+    pub fn total(&self) -> usize {
+        self.added + self.duplicates + self.errors
+    }
+
+    pub fn print_summary(&self) {
+        println!("\n{} Summary:", self.topic_name);
+        println!("  Added: {}", self.added);
+        println!("  Duplicates: {}", self.duplicates);
+        println!("  Errors: {}", self.errors);
+        println!("  Total: {}", self.total());
+    }
 }
