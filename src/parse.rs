@@ -39,7 +39,7 @@ impl FromColumnSlice for Word {
             .to_string();
 
         let kanji = record.get(start_col + 2)    
-            .ok_or("Missing kanji field")?
+            .unwrap_or("") // <--- kanji is optional
             .to_string();
 
         Ok(Word { japanese, english, kanji })
@@ -48,8 +48,8 @@ impl FromColumnSlice for Word {
 
 #[derive(Debug, Clone)]
 pub struct Topic {
-    name: String,
-    words: Vec<Word>,
+    pub(crate) name: String,
+    pub(crate) words: Vec<Word>,
 }
 
 impl Topic {
