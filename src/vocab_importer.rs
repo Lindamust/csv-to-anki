@@ -68,6 +68,11 @@ impl JapaneseVocabImporter {
         }
     }
 
+    /// Import a single word
+    pub fn import_word(&self, word: &Word, topic: &str) -> Result<i64, Box<dyn Error>> {
+        let note = self.word_to_note(word, topic);
+        self.client.add_note(note)
+    }
 
 
 }
