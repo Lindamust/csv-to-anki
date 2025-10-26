@@ -36,6 +36,11 @@ struct AnkiResponse<T> {
     error: Option<String>,
 }
 
+/// Parameters for adding a note
+#[derive(Debug, Serialize)]
+struct AddNoteParams {
+    note: Note
+}
 
 /// Anki note structure
 #[derive(Debug, Serialize, Clone)]
