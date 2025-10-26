@@ -5,6 +5,9 @@ use std::error::Error;
 //                          High-Level API for Japanese Vocabularly
 // ============================================================================================
 
+// TODO: 
+// Bulk import - import_topicS, add_noteS 
+
 pub struct JapaneseVocabImporter {
     pub client: AnkiConnectClient,
     deck_name: String,
@@ -118,8 +121,8 @@ impl JapaneseVocabImporter {
     }
 
     /// Import a single word
-    pub fn import_word(&self, word: &Word, topic: &str) -> Result<i64, Box<dyn Error>> {
-        let note = self.word_to_note(word, topic);
+    pub fn import_word(&self, word: &Word, topic_name: &str) -> Result<i64, Box<dyn Error>> {
+        let note = self.word_to_note(word, topic_name);
         self.client.add_note(note)
     }
 
@@ -129,6 +132,10 @@ impl JapaneseVocabImporter {
         }).collect();
 
         self.client.add_notes(notes)
+    }
+
+    fn retry_error_word(&self, word: &Word, topic_name: &str) -> Result<i64, Box<dyn Error>> {
+        self.import_word(word, topic_name)
     }
 
     /// import all words for a topic
@@ -158,7 +165,7 @@ impl JapaneseVocabImporter {
 
                 Err(e) => {
                     result.errors += 1;
-                    eprintln!(" Error: adding {}: {}", word.japanese(), e);
+                    println!(" Error: adding {}: {}. Retrying...", word.japanese(), e);
                 }
             }
         }
