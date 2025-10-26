@@ -45,47 +45,47 @@ struct AddNoteParams {
 #[derive(Debug, Serialize, Clone)]
 pub struct Note {
     #[serde(rename = "deckName")]
-    deck_name: String,
+    pub(crate) deck_name: String,
 
     #[serde(rename = "modelName")]
-    model_name: String,
+    pub(crate) model_name: String,
 
-    fields: String,
+    pub(crate) fields: NoteFields,
     
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    tags: Vec<String>,
+    pub(crate) tags: Vec<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    audio: Option<Vec<AudioField>>,
+    pub(crate) audio: Option<Vec<AudioField>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    picture: Option<Vec<PictureField>>,
+    pub(crate) picture: Option<Vec<PictureField>>,
 }
 
 
 /// Note fields for Japanese vocabularly
 #[derive(Debug, Serialize, Clone)]
-struct NoteFields {
+pub struct NoteFields {
     #[serde(rename = "Front")]
-    front: String,
+    pub(crate) front: String,
 
     #[serde(rename = "Back")]
-    back: String,
+    pub(crate) back: String,
 
     #[serde(rename = "Kanji", skip_serializing_if = "String::is_empty")]
-    kanji: String,
+    pub(crate) kanji: String,
 }
 
 
 #[derive(Debug, Serialize, Clone)]
-struct AudioField {
+pub struct AudioField {
     url: String,
     filename: String,
     fields: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
-struct PictureField {
+pub struct PictureField {
     url: String,
     filename: String,
     fields: Vec<String>,
