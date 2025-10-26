@@ -1,4 +1,3 @@
-use std::result;
 use std::{error::Error, env};
 
 mod parse;
@@ -79,13 +78,13 @@ fn parse_topics_from_csv(file_path: &str) -> Result<Vec<Topic>, Box<dyn Error>> 
 
 fn handle_importing(topics: Vec<Topic>) -> Result<(), Box<dyn Error>> {
     println!("\nStep 2: Creating Anki importer...");
-    let importer = JapaneseVocabImporter::new("Japanese::MyVocabulary")
-        .with_model("Basic");
+    let importer = JapaneseVocabImporter::new("Japanese");
 
     println!("\nStep 3: Initializing connection to Anki...");
-    importer.initialise()?;
-
+    let deck_ids = importer.initialise_with_topics(&topics)?;
+        
     println!("\nStep 4: Importing vocabulary to Anki...");
+
     let results = importer.import_all_topics(&topics)?;
 
     display_import_results(results);

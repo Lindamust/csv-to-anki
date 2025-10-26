@@ -71,9 +71,6 @@ pub struct NoteFields {
 
     #[serde(rename = "Back")]
     pub(crate) back: String,
-
-    #[serde(rename = "Kanji", skip_serializing_if = "String::is_empty")]
-    pub(crate) kanji: String,
 }
 
 
@@ -171,6 +168,8 @@ impl AnkiConnectClient {
         if let Some(error) = response.error {
             return Err(format!("Failed to create deck: {}", error).into());
         }
+
+        // println!("{:?}", Ok::<&AnkiResponse<i64>, String>(&response));
 
         Ok(response.result.unwrap_or(0))
     }
