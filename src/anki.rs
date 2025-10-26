@@ -21,7 +21,11 @@ struct AnkiRequest<T> {
 
 impl<T> AnkiRequest<T> {
     fn new(action: impl Into<String>, params: T) -> Self {
-        AnkiRequest { action: action.into(), version: 6, params }
+        AnkiRequest { 
+            action: action.into(), 
+            version: 6,     // AnkiConnect API version
+            params 
+        }
     }
 }
 
