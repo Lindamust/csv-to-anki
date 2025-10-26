@@ -8,7 +8,7 @@ mod vocab_importer;
 use csv_partitioner::{CsvSliceParser, FromColumnSlice};
 
 use crate::parse::{Topic, Word};
-use crate::vocab_importer::JapaneseVocabImporter;
+use crate::vocab_importer::{ImportResult, JapaneseVocabImporter};
 
 // ============================================================================================
 //                                          csv-to-anki
@@ -25,6 +25,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let topics: Vec<Topic> = handle_parsing(&path)?;
 
+    handle_importing(topics)?;
 
     Ok(())
 }
@@ -76,5 +77,37 @@ fn parse_topics_from_csv(file_path: &str) -> Result<Vec<Topic>, Box<dyn Error>> 
         .collect::<Vec<_>>())
 }
 
+fn handle_importing(topics: Vec<Topic>) -> Result<(), Box<dyn Error>> {
+    println!("\nStep 2: Creating Anki importer...");
+    let importer = JapaneseVocabImporter::new("Japanese::MyVocabulary")
+        .with_model("Basic");
 
+    println!("\nStep 3: Initializing connection to Anki...");
+    importer.initialise()?;
 
+    println!("\nStep 4: Importing vocabulary to Anki...");
+    let results = importer.import_all_topics(&topics)?;
+
+    display_import_results(results);
+
+    Ok(())
+}
+
+fn display_import_results(results: Vec<ImportResult>) {
+    println!("\n========================================");
+    println!("IMPORT COMPLETE");
+    println!("========================================");
+    
+    for result in &results {
+        result.print_summary();
+    }
+
+    let total_added: usize = results.iter().map(|r| r.added).sum();
+    let total_duplicates: usize = results.iter().map(|r| r.duplicates).sum();
+    let total_errors: usize = results.iter().map(|r| r.errors).sum();
+    
+    println!("\nOverall Summary:");
+    println!("  ✓ Successfully added: {}", total_added);
+    println!("  ⊘ Duplicates skipped: {}", total_duplicates);
+    println!("  ✗ Errors: {}", total_errors);
+}

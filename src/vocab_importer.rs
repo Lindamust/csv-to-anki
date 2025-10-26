@@ -39,7 +39,7 @@ impl JapaneseVocabImporter {
         self.client.check_connection()
             .map_err(
                 |e| 
-                format!("Cannot connectio to Anki. Is Anki running with AnkiConnect installed? Error: {}", e)
+                format!("Cannot connect to to Anki. Is Anki running with AnkiConnect installed? Error: {}", e)
             )?;
 
         println!("Success: Connected to Anki");
