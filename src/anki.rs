@@ -1,9 +1,8 @@
 use std::error::Error;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use reqwest::{self, Response};
+use reqwest::{self};
 
-use super::{Word, Topic};
 
 
 // ============================================================================================
@@ -229,6 +228,10 @@ impl AnkiConnectClient {
         let result = response.json::<R>()?;
         Ok(result)
     }
+}
 
-
+impl Default for AnkiConnectClient {
+    fn default() -> Self {
+        Self::new()
+    }
 }
