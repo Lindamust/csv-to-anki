@@ -125,6 +125,7 @@ impl AnkiConnectClient {
         }
     }
 
+    /// check if ankiconnect is available and request permission
     pub fn check_connection(&self) -> Result<(), Box<dyn Error>> {
         let request = AnkiRequest::new("requestPermission", RequestPermissionParams {});
         let response: AnkiResponse<serde_json::Value> = self.send_request(&request)?;
@@ -136,6 +137,8 @@ impl AnkiConnectClient {
         Ok(())
     }
 
+
+    /// get all deck names
     pub fn get_deck_names(&self) -> Result<Vec<String>, Box<dyn Error>> {
         let request = AnkiRequest::new("deckNames", GetDeckNamesParams {});
         let response: AnkiResponse<Vec<String>> = self.send_request(&request)?;
@@ -148,6 +151,23 @@ impl AnkiConnectClient {
     }
 
 
+    /// create a new deck (idempotent - won't fail if deck exists)66
+    pub fn create_deck(&self, deck_name: &str) -> Result<i64, Box<dyn Error>> {
+        let request = AnkiRequest::new(
+            "createDeck", 
+            CreateDeckParams { deck: deck_name.to_string() },
+        );
+
+        let response: AnkiResponse<i64> = self.send_request(&request)?;
+
+        if let Some(error) = response.error {
+            return Err(format!("Failed to create deck: {}", error).into());
+        }
+
+        Ok(response.result.unwrap_or(0))
+    }
+
+    /// send a request to ankiconnect
     fn send_request<T: Serialize, R: for<'de> Deserialize<'de>>(
         &self,
         request: &T
