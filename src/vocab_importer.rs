@@ -2,7 +2,7 @@
 //                          High-Level API for Japanese Vocabularly
 // ============================================================================================
 
-use crate::anki::AnkiConnectClient;
+use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::Word};
 use std::error::Error;
 
 pub struct JapaneseVocabImporter {
@@ -52,5 +52,20 @@ impl JapaneseVocabImporter {
         Ok(())
     }
 
+    /// Convert a Word to an Anki Note
+    pub fn word_to_note(&self, word: &Word, topic: &str) -> Note {
+        Note {
+            deck_name: self.deck_name.clone(),
+            model_name: self.model_name.clone(),
+            fields: NoteFields {
+                front: word.japanese().clone(),
+                back: word.english().clone(),
+                kanji: word.kanji().clone(),
+            },
+            tags: vec![topic.to_string(), "japanese".to_string(), "vocabularly".to_string()],
+            audio: None,
+            picture: None,
+        }
+    }
 
 }
