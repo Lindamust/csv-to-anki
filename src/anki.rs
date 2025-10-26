@@ -176,6 +176,29 @@ impl AnkiConnectClient {
         Ok(response.result.unwrap_or(0))
     }
 
+    /// Add a single note to anki
+    pub fn add_note(&self, note: Note) -> Result<i64, Box<dyn Error>> {
+        let request = AnkiRequest::new(
+            "addNote", 
+            AddNoteParams { note },
+        );
+
+        let response: AnkiResponse<i64> = self.send_request(&request)?;
+
+        if let Some(error) = response.error {
+            // check if duplicate note error
+            if error.contains("duplicate") {
+                return Err("Duplicate note".into());
+            }
+
+            return Err(format!("Failed to add note: {}", error).into());
+        }
+
+        Ok(response.result.unwrap_or(0))
+    }
+
+
+
     /// send a request to ankiconnect
     fn send_request<T: Serialize, R: for<'de> Deserialize<'de>>(
         &self,
