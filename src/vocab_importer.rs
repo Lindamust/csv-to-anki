@@ -1,5 +1,5 @@
 use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::{Word, Topic}};
-use std::{error::Error, result};
+use std::{error::Error};
 
 // ============================================================================================
 //                          High-Level API for Japanese Vocabularly
