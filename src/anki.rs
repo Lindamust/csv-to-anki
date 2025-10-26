@@ -1,5 +1,6 @@
 use std::error::Error;
 use serde::{Deserialize, Serialize};
+use serde_json;
 use reqwest::{self, Response};
 
 use super::{Word, Topic};
@@ -124,6 +125,29 @@ impl AnkiConnectClient {
         }
     }
 
+    pub fn check_connection(&self) -> Result<(), Box<dyn Error>> {
+        let request = AnkiRequest::new("requestPermission", RequestPermissionParams {});
+        let response: AnkiResponse<serde_json::Value> = self.send_request(&request)?;
+
+        if let Some(error) = response.error {
+            return Err(format!("AnkiConnect error: {}", error).into());
+        }
+
+        Ok(())
+    }
+
+    pub fn get_deck_names(&self) -> Result<Vec<String>, Box<dyn Error>> {
+        let request = AnkiRequest::new("deckNames", GetDeckNamesParams {});
+        let response: AnkiResponse<Vec<String>> = self.send_request(&request)?;
+
+        if let Some(error) = response.error {
+            return Err(format!("Failed to get deck names: {}", error).into());
+        }
+
+        Ok(response.result.unwrap_or_default())
+    }
+
+
     fn send_request<T: Serialize, R: for<'de> Deserialize<'de>>(
         &self,
         request: &T
@@ -132,6 +156,13 @@ impl AnkiConnectClient {
             .post(&self.base_url)
             .json(request)
             .send()?;
+
+        if !response.status().is_success() {
+            return Err(format!("HTTP error: {}", response.status()).into());
+        }
+
+        let result = response.json::<R>()?;
+        Ok(result)
     }
 
 
