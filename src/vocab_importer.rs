@@ -1,12 +1,15 @@
-use crate::{anki::{AnkiConnectClient, NoteFields, Note}, parse::{Word, Topic}};
-use std::error::Error;
+#[allow(dead_code, unused_variables)]
+
+
+use crate::{anki::{AnkiConnectClient, DuplicateScopeOptions, Note, NoteFields, OptionFields}, parse::{Topic, Word}};
+use std::{error::Error, vec};
 
 // ============================================================================================
 //                          High-Level API for Japanese Vocabularly
 // ============================================================================================
 
 // TODO: 
-// Bulk import - import_topicS, add_noteS 
+// Bulk import - import_topicS, add_noteS (DONE)
 
 pub struct JapaneseVocabImporter {
     pub client: AnkiConnectClient,
@@ -26,18 +29,18 @@ impl JapaneseVocabImporter {
     }
 
     /// Set a custom note type/model
-    pub fn with_model(mut self, model_name: impl Into<String>) -> Self {
+    pub fn _with_model(mut self, model_name: impl Into<String>) -> Self {
         self.model_name = model_name.into();
         self
     }
 
     /// Set a custom AnkiConnect URl
-    pub fn with_url(mut self, url: impl Into<String>) -> Self {
+    pub fn _with_url(mut self, url: impl Into<String>) -> Self {
         self.client = AnkiConnectClient::with_url(url);
         self
     }
 
-    pub fn initialise(&self) -> Result<(), Box<dyn Error>> {
+    pub fn _initialise(&self) -> Result<(), Box<dyn Error>> {
         // Check connection
         self.client.check_connection()
             .map_err(
@@ -57,14 +60,6 @@ impl JapaneseVocabImporter {
 
 
     pub fn initialise_with_topics(&self, topics: &[Topic]) -> Result<(), Box<dyn Error>> {
-        self.client.check_connection()
-            .map_err(
-                |e|
-                format!("Cannot connect to to Anki. Is Anki running with AnkiConnect installed? Error: {}", e)
-            )?;
-
-        println!("Success: Connected to Anki");
-        
         self.client.create_deck(&self.deck_name)?;
 
         println!("Success: Main Deck '{}' ready", self.deck_name);
@@ -73,7 +68,7 @@ impl JapaneseVocabImporter {
         for topic in topics {
             let subdeck_name = format!("{}::{}", self.deck_name, topic.name());
             let deck_id = self.client.create_deck(&subdeck_name)?;
-            println!("  Success: Created - '{}', id = {}", subdeck_name, deck_id);
+            println!("  Success: Created - '{}', id = {}", subdeck_name, &deck_id);
         }
 
         Ok(())
@@ -107,12 +102,21 @@ impl JapaneseVocabImporter {
 
 
         Note {
-            deck_name: full_deck_name,
+            deck_name: full_deck_name.clone(),
             model_name: self.model_name.clone(),
             fields: NoteFields {
                 front: front,
                 back: back,
             },
+            options: Some(OptionFields {
+                allow_duplicate: true,
+                duplicate_scope: "deck".to_string(),
+                duplicate_scope_options: DuplicateScopeOptions {
+                    deck_name: full_deck_name.clone(),
+                    check_children: false,
+                    check_all_models: false,
+                }
+            }),
             tags: vec![topic.to_string(), "japanese".to_string(), "vocabularly".to_string()]
             .into_iter().filter(|t| !t.is_empty()).collect(),
             audio: None,
@@ -121,51 +125,52 @@ impl JapaneseVocabImporter {
     }
 
     /// Import a single word
-    pub fn import_word(&self, word: &Word, topic_name: &str) -> Result<i64, Box<dyn Error>> {
+    pub fn _import_word(&self, word: &Word, topic_name: &str) -> Result<i64, Box<dyn Error>> {
         let note = self.word_to_note(word, topic_name);
-        self.client.add_note(note)
+        self.client._add_note(note)
     }
 
-    pub fn import_words(&self, topic: &Topic) -> Result<Vec<Result<i64, String>>, Box<dyn Error>> {
-        let notes: Vec<Note>= topic.words().iter().map(|word| {
-            self.word_to_note(word, topic.name())
-        }).collect();
+    // import topic already bulk adds through 'add_notes'
+    // pub fn import_words(&self, topic: &Topic) -> Result<Vec<Result<i64, String>>, Box<dyn Error>> {
+    //     let notes: Vec<Note>= topic.words().iter().map(|word| {
+    //         self.word_to_note(word, topic.name())
+    //     }).collect();
 
-        self.client.add_notes(notes)
-    }
-
-    fn retry_error_word(&self, word: &Word, topic_name: &str) -> Result<i64, Box<dyn Error>> {
-        self.import_word(word, topic_name)
-    }
+    //     self.client.add_notes(notes)?;
+    // }
 
     /// import all words for a topic
     /// 
     /// 1. create deck
     /// 2. populate deck
     pub fn import_topic(&self, topic: &Topic) -> Result<ImportResult, Box<dyn Error>> {
-        let mut result = ImportResult::new(&topic.name());
+        let mut result: ImportResult = ImportResult::new(&topic.name());
+        
+        
+        let notes: Vec<Note> = topic.words()
+            .iter()
+            .map(|word| self.word_to_note(word, topic.name()))
+            .collect();
 
-        for word in topic.words() {
-            match self.import_word(word, topic.name()) {
-                Ok(note_id) => {
+        let add_results: Vec<Result<i64, String>> = self.client.add_notes(notes)?;
+
+        // println!("{:?}", &add_results);
+
+        for (_idx, add_result) in add_results.iter().enumerate() {
+            match add_result {
+                Ok(_note_id) => {
                     result.added += 1;
-
-                    if word.kanji().trim().is_empty() {
-                        println!("  Success: Added - {} -> {}, id = {}", word.kanji(), word.english(), note_id);
-                    } else {
-                        println!("  Success: Added - {} -> {}, id = {}", word.japanese(), word.english(), note_id);
-                    }
-
+                    // println!("  Success: Added card - {}, id = {}", idx, note_id);
                 },
 
-                Err(e) if e.to_string().contains("Duplicate") => {
+                Err(e) if e.contains("Duplicate") => {
                     result.duplicates += 1;
-                    println!("  Error: Duplicate no. {} - {}", result.duplicates, word.japanese());
+                    // println!("  Error: Duplicate card - {}, dupe count = {} | {}", idx, result.duplicates, e);
                 },
 
                 Err(e) => {
                     result.errors += 1;
-                    println!(" Error: adding {}: {}. Retrying...", word.japanese(), e);
+                    // println!("  Error: Failed adding card - {}, error count = {} | {}", idx, result.errors, e);
                 }
             }
         }
@@ -181,6 +186,10 @@ impl JapaneseVocabImporter {
         for topic in topics {
             println!("\nImporting topic: {}", topic.name());
             let result = self.import_topic(topic)?;
+
+            result.print_summary();
+
+
             results.push(result);
         }
 

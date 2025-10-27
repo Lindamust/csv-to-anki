@@ -1,3 +1,5 @@
+#[allow(dead_code)]
+
 use std::{error::Error, env};
 
 mod parse;
@@ -20,23 +22,58 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let path = get_file_path(env::args()).ok_or("No file path specified")?;
+    let (path, deck_name) = get_inputs()?;
 
+    println!("Step 1: Parsing CSV file...");
     let topics: Vec<Topic> = handle_parsing(&path)?;
 
-    handle_importing(topics)?;
+    println!("\nStep 2: Creating Anki importer...");
+    let importer = JapaneseVocabImporter::new(deck_name);
+
+    println!("\nStep 3: Initializing connection to Anki...");
+    connect_to_anki(&importer)?;
+
+    println!("\nStep 4: Building sub-decks in Anki...");
+    build_sub_decks(&importer, &topics)?;
+
+    println!("\nStep 5: Populating decks with vocabulary in Anki...");
+    let results: Vec<ImportResult> = importer.import_all_topics(&topics)?;
+
+    display_import_results(results);
 
     Ok(())
 }
 
+fn build_sub_decks(importer: &JapaneseVocabImporter, topics: &[Topic]) -> Result<(), Box<dyn Error>> {
+    importer.initialise_with_topics(&topics)?;
 
-#[inline]
-fn get_file_path(args: env::Args) -> Option<String> {
-    args.into_iter().nth(1)
+    Ok(())
+}
+
+fn connect_to_anki(importer: &JapaneseVocabImporter) -> Result<(), Box<dyn Error>> {
+    importer.client.check_connection()
+        .map_err(
+            |e|
+            format!("Cannot connect to to Anki. Is Anki running with AnkiConnect installed? Error: {}", e)
+        )?;
+
+    Ok(())
+}
+
+fn get_inputs() -> Result<(String, String), Box<dyn Error>> {
+    let mut args = env::args();
+    args.next(); // skip first argument (program name)
+
+    let file_path = args.next()
+        .ok_or(format!("Error: Missing file path argument.\nUSAGE: [path to input] [desired deck name]"))?;
+
+    let deck_name = args.next()
+        .ok_or(format!("Error: Missing deck name argument.\nUSAGE: [path to input] [desired deck name]"))?;
+
+    Ok((file_path, deck_name))
 }
 
 fn handle_parsing(file_path: &str) -> Result<Vec<Topic>, Box<dyn Error>> {
-    println!("Step 1: Parsing CSV file...");
     let topics: Vec<Topic> = parse_topics_from_csv(file_path)?;
 
     println!("\nParsed {} topics:", topics.len());
@@ -76,30 +113,15 @@ fn parse_topics_from_csv(file_path: &str) -> Result<Vec<Topic>, Box<dyn Error>> 
         .collect::<Vec<_>>())
 }
 
-fn handle_importing(topics: Vec<Topic>) -> Result<(), Box<dyn Error>> {
-    println!("\nStep 2: Creating Anki importer...");
-    let importer = JapaneseVocabImporter::new("Japanese");
-
-    println!("\nStep 3: Initializing connection to Anki...");
-    let deck_ids = importer.initialise_with_topics(&topics)?;
-        
-    println!("\nStep 4: Importing vocabulary to Anki...");
-
-    let results = importer.import_all_topics(&topics)?;
-
-    display_import_results(results);
-
-    Ok(())
-}
 
 fn display_import_results(results: Vec<ImportResult>) {
     println!("\n========================================");
     println!("IMPORT COMPLETE");
     println!("========================================");
     
-    for result in &results {
-        result.print_summary();
-    }
+    // for result in &results {
+    //     result.print_summary();
+    // }
 
     let total_added: usize = results.iter().map(|r| r.added).sum();
     let total_duplicates: usize = results.iter().map(|r| r.duplicates).sum();

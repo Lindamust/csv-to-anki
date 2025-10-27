@@ -37,8 +37,14 @@ struct AnkiResponse<T> {
 
 /// Parameters for adding a note
 #[derive(Debug, Serialize)]
-struct AddNoteParams {
+struct _AddNoteParams {
     note: Note
+}
+
+/// Parameters for bulk adding notes
+#[derive(Debug, Serialize)]
+struct AddNotesParams {
+    notes: Vec<Note>
 }
 
 /// Anki note structure
@@ -54,6 +60,9 @@ pub struct Note {
     
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub(crate) tags: Vec<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) options: Option<OptionFields>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) audio: Option<Vec<AudioField>>,
@@ -103,8 +112,32 @@ struct RequestPermissionParams {}
 
 /// Parameters for getting deck names
 #[derive(Debug, Serialize)]
-struct GetDeckNamesParams {}
+struct _GetDeckNamesParams {}
 
+
+#[derive(Debug, Serialize, Clone)]
+pub struct OptionFields {
+    #[serde(rename = "allowDuplicate")]
+    pub(crate) allow_duplicate: bool,
+
+    #[serde(rename = "duplicateScope")]
+    pub(crate) duplicate_scope: String,
+
+    #[serde(rename = "duplicateScopeOptions")]
+    pub(crate) duplicate_scope_options: DuplicateScopeOptions
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct DuplicateScopeOptions {
+    #[serde(rename = "deckName")]
+    pub(crate) deck_name: String,
+
+    #[serde(rename = "checkChildren")]
+    pub(crate) check_children: bool,
+
+    #[serde(rename = "checkAllModels")]
+    pub(crate) check_all_models: bool
+}
 
 // ============================================================================================
 //                                  AnkiConnect Client
@@ -144,8 +177,8 @@ impl AnkiConnectClient {
 
 
     /// get all deck names
-    pub fn get_deck_names(&self) -> Result<Vec<String>, Box<dyn Error>> {
-        let request = AnkiRequest::new("deckNames", GetDeckNamesParams {});
+    pub fn _get_deck_names(&self) -> Result<Vec<String>, Box<dyn Error>> {
+        let request = AnkiRequest::new("deckNames", _GetDeckNamesParams {});
         let response: AnkiResponse<Vec<String>> = self.send_request(&request)?;
 
         if let Some(error) = response.error {
@@ -175,10 +208,10 @@ impl AnkiConnectClient {
     }
 
     /// Add a single note to anki
-    pub fn add_note(&self, note: Note) -> Result<i64, Box<dyn Error>> {
+    pub fn _add_note(&self, note: Note) -> Result<i64, Box<dyn Error>> {
         let request = AnkiRequest::new(
             "addNote", 
-            AddNoteParams { note },
+            _AddNoteParams { note },
         );
 
         let response: AnkiResponse<i64> = self.send_request(&request)?;
@@ -197,15 +230,31 @@ impl AnkiConnectClient {
 
 
     /// Add multiple notes in batch 
-    pub fn add_notes(&self, notes: Vec<Note>) -> Result<Vec<Result<i64, String>>, Box<dyn Error>> {
-        let mut results = Vec::new();
+    /// /// Parameters for bulk adding notes
+    // #[derive(Debug, Serialize)]
+    // struct AddNotesParams {
+    //     notes: Vec<Note>
+    // }
+    pub fn add_notes(&self, notes: Vec<Note>) 
+        -> Result<Vec<Result<i64, String>>, Box<dyn Error>>
+    {
+        let request: AnkiRequest<AddNotesParams> = AnkiRequest::new(
+            "addNotes", 
+            AddNotesParams { notes },
+        );
 
-        for note in notes {
-            match self.add_note(note) {
-                Ok(id) => results.push(Ok(id)),
-                Err(e) => results.push(Err(e.to_string())),
-            }
-        }
+        let response: AnkiResponse<Vec<Option<i64>>> = self.send_request(&request)?;
+
+        // println!("{:?}", &response);
+
+        let results: Vec<Result<i64, String>> = response.result.ok_or("my program isn't working")?
+            .into_iter()
+            .enumerate()
+            .map(|(idx, opt)| match opt {
+                Some(id) => Ok(id),
+                None => Err(format!("Note at index {} could not be created", idx)),
+            })
+            .collect();
 
         Ok(results)
     }
@@ -215,7 +264,7 @@ impl AnkiConnectClient {
         &self,
         request: &T
     ) -> Result<R, Box<dyn Error>> {
-        let response = self.client
+        let response: reqwest::blocking::Response = self.client
             .post(&self.base_url)
             .json(request)
             .send()?;
@@ -224,7 +273,7 @@ impl AnkiConnectClient {
             return Err(format!("HTTP error: {}", response.status()).into());
         }
 
-        let result = response.json::<R>()?;
+        let result: R = response.json::<R>()?;
         Ok(result)
     }
 }

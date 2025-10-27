@@ -1,3 +1,6 @@
+#[allow(dead_code)]
+
+
 use csv_partitioner::{CsvSliceParser, FromColumnSlice};
 use std::{error::Error, sync::Arc};
 
@@ -63,13 +66,13 @@ impl Topic {
 }
 
 
-pub struct TopicWithWordIter {
+pub struct _TopicWithWordIter {
     name: String,
     parser: Arc<CsvSliceParser>,
     slice_index: usize,
 }
 
-impl TopicWithWordIter {
+impl _TopicWithWordIter {
     pub fn words(&self) -> Result<impl Iterator<Item = Result<Word, Box<dyn Error>>> + '_, Box<dyn Error>> {
         self.parser.parse_slice_iter::<Word>(self.slice_index)
     }
@@ -80,7 +83,7 @@ impl TopicWithWordIter {
 }
 
 pub fn parse_topics_nested_iter(file_path: &str)
-    -> Result<impl Iterator<Item = Result<TopicWithWordIter, Box<dyn Error>>>, Box<dyn Error>> 
+    -> Result<impl Iterator<Item = Result<_TopicWithWordIter, Box<dyn Error>>>, Box<dyn Error>> 
     {
         let parser = Arc::new(CsvSliceParser::from_file(file_path)?);
         let slice_count = parser.slice_count::<Word>();
@@ -93,7 +96,7 @@ pub fn parse_topics_nested_iter(file_path: &str)
                     .unwrap_or("")
                     .to_string();
 
-                Ok(TopicWithWordIter { 
+                Ok(_TopicWithWordIter { 
                     name: topic_name, parser: Arc::clone(&parser), slice_index: i 
                 })
             }))
