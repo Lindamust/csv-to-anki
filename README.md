@@ -2,6 +2,15 @@
 - solution: i'd rather spend 3 months slowly building a program in between assessments to 
 automatically build flashcards than to study normally
 
+# INSTALLATION:
+i dont know how to set up docker images, so you'll just have to clone the repo and build it yourself
+
+# USAGE
+
+1. Have Anki open
+2. Ensure AnkiConnect addon is installed
+3. Run program to the following specifications:
+
 Basically: takes a csv file containing your japanese vocabularly and creates ANKI flashcards
 input has to be perfectly formatted or else the program will throw a hissy fit
 
