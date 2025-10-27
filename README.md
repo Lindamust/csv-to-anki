@@ -7,9 +7,9 @@ input has to be perfectly formatted or else the program will throw a hissy fit
 
 Example: Follow this template exactly (because that's what my japanese teacher gave me)
 
-topic1, , ,                topic2, , , ...
-word, translation, kanji,  word, translation, kanji, ...
-...
+topic1, , ,                topic2, , , ...      \n
+word, translation, kanji,  word, translation, kanji, ... \n
+... \n
 
 <img width="655" height="724" alt="{452F4591-08FD-4582-85B0-0A44B6A47A4C}" src="https://github.com/user-attachments/assets/e6e5e1e6-c2ea-4c8d-a09b-643d3bd53fea" />
 
