@@ -1,5 +1,5 @@
-problem: japanese is a really hard subject so my teacher sent a excel spreadsheet of all the vocabulary in the syllabus
-solution: i'd rather spend 3 months slowly building a program in between assessments to 
+- problem: japanese is a really hard subject so my teacher sent a excel spreadsheet of all the vocabulary in the syllabus
+- solution: i'd rather spend 3 months slowly building a program in between assessments to 
 automatically build flashcards than to study normally
 
 Basically: takes a csv file containing your japanese vocabularly and creates ANKI flashcards
