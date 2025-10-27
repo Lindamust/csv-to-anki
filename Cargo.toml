@@ -3,6 +3,10 @@ name = "untitled"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "csv-to-anki"
+path = "src/main.rs"
+
 [dependencies]
 csv = "1.4.0"
 csv-partitioner = { path = "csv_partitioner" }
