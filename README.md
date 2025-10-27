@@ -30,3 +30,9 @@ Output:
 
 
 (this program does NOT check duplicates, beware)
+
+
+
+## Contributing
+
+fork, pull request, leave an issue, i'll look at it when i can
