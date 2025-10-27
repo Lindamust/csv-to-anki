@@ -13,6 +13,10 @@ word, translation, kanji,  word, translation, kanji, ... \n
 
 <img width="655" height="724" alt="{452F4591-08FD-4582-85B0-0A44B6A47A4C}" src="https://github.com/user-attachments/assets/e6e5e1e6-c2ea-4c8d-a09b-643d3bd53fea" />
 
+It will put the kanji field as the front of the card,
+and have the hiragana reading and the translation at the back
+
+(if kanji is not present it will default to hiragana front, translation back)
 
 Output:
 
